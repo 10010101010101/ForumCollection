@@ -76,30 +76,30 @@ namespace ForumCollection.HelperClass
         /// <param name="PicturePath">要插入图片的绝对路径。</param>
         /// <param name="PictuteWidth">插入后，图片在Excel中显示的宽度。</param>
         /// <param name="PictureHeight">插入后，图片在Excel中显示的高度。</param>
-        public void InsertPicture(string RangeName, string PicturePath, float PictuteWidth, float PictureHeight)
-        {
-            m_objRange = m_objSheet.get_Range(RangeName, m_objOpt);
-            m_objRange.Select();
-            float PicLeft, PicTop;
-            PicLeft = Convert.ToSingle(m_objRange.Left) + 2;
-            PicTop = Convert.ToSingle(m_objRange.Top) + 2;
+        //public void InsertPicture(string RangeName, string PicturePath, float PictuteWidth, float PictureHeight)
+        //{
+        //    m_objRange = m_objSheet.get_Range(RangeName, m_objOpt);
+        //    m_objRange.Select();
+        //    float PicLeft, PicTop;
+        //    PicLeft = Convert.ToSingle(m_objRange.Left) + 2;
+        //    PicTop = Convert.ToSingle(m_objRange.Top) + 2;
 
-            var image = Image.FromFile(PicturePath);
-            var width = image.Width;
-            var height = image.Height;
+        //    var image = Image.FromFile(PicturePath);
+        //    var width = image.Width;
+        //    var height = image.Height;
 
-            PictuteWidth = PictuteWidth < width ? PictuteWidth : width;
-            PictureHeight = PictureHeight < height ? PictureHeight : height;
+        //    PictuteWidth = PictuteWidth < width ? PictuteWidth : width;
+        //    PictureHeight = PictureHeight < height ? PictureHeight : height;
 
-            //参数含义：
-            //图片路径
-            //是否链接到文件
-            //图片插入时是否随文档一起保存
-            //图片在文档中的坐标位置（单位：points）
-            //图片显示的宽度和高度（单位：points）
-            //参数详细信息参见：http://msdn2.microsoft.com/zh-cn/library/aa221765(office.11).aspx
-            m_objSheet.Shapes.AddPicture(PicturePath, Microsoft.Office.Core.MsoTriState.msoFalse, Microsoft.Office.Core.MsoTriState.msoTrue, PicLeft, PicTop, PictuteWidth, PictureHeight);
-        }
+        //    //参数含义：
+        //    //图片路径
+        //    //是否链接到文件
+        //    //图片插入时是否随文档一起保存
+        //    //图片在文档中的坐标位置（单位：points）
+        //    //图片显示的宽度和高度（单位：points）
+        //    //参数详细信息参见：http://msdn2.microsoft.com/zh-cn/library/aa221765(office.11).aspx
+        //    m_objSheet.Shapes.AddPicture(PicturePath, Microsoft.Office.Core.MsoTriState.msoFalse, Microsoft.Office.Core.MsoTriState.msoTrue, PicLeft, PicTop, PictuteWidth, PictureHeight);
+        //}
 
         /// <summary>
         /// 将Excel文件保存到指定的目录，目录必须事先存在，文件名称不一定要存在。

@@ -15,7 +15,7 @@ namespace ForumCollection.HelperClass
 
         public static string XamlTransforEmpty(string xmal)
         {
-            return xmal.Replace("&lt;", "").Replace("&gt;", "").Replace("&amp;", "").Replace("&apos;", "").Replace("&quot;", "").Replace("&nbsp;","").Replace(";","");
+            return xmal.Replace(";", "").Replace("&lt", "").Replace("&gt", "").Replace("&amp", "").Replace("&apos", "").Replace("&quot", "").Replace("&nbsp","");
         }
     }
 }

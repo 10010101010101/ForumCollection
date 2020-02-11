@@ -27,6 +27,11 @@ namespace ForumCollection
     {
         public ForumInfo ForumInfos = new ForumInfo();
 
+        /// <summary>
+        /// 记录历史浏览记录
+        /// </summary>
+        public List<ItemInfo> HistoricalURL = new List<ItemInfo>();
+
         public double DropItemListWidth { get; set; }
         public double DropItemListMargin = 60;
 
@@ -57,6 +62,8 @@ namespace ForumCollection
             foreach (string key in IniFileHelper.ReadIniKeys("URL", Constant.HistoricalURL))
             {
                 string value = IniFileHelper.ReadIniValue("URL", key, "", Constant.HistoricalURL);
+
+                AddBrowseItem(new ItemInfo { Title = value, URL = key});
 
                 if (NavigationComboBox.Items.Count >= 10)
                 {
@@ -127,14 +134,14 @@ namespace ForumCollection
                     itemInfo.UploadFileList.Add(new UploadFileInfo { FileHref = fileInfo.downloadUrl, FileName = fileInfo.fileName, Floor = itemInfo.UploadFileList.Count, UserName = reply.userName });
                 }
 
-                foreach (Match R in new Regex(@"(?<=(R:)|(r:))(.*)(?=\s*)").Matches(reply.content))
+                foreach (Match R in new Regex("(R:|r:)(.*?<)").Matches(reply.innerHtml))
                 {
-                    string address = "R:" + R.Value.Trim();
+                    string address = R.Value.Trim().Replace("<","");
 
                     itemInfo.DiskAddressList.Add(new DiskAddressInfo { Address = address, Floor = itemInfo.DiskAddressList.Count, UserName = reply.userName});
                 }
 
-                foreach (Match W in new Regex(@"(?<=(w:)|(W:))(.*)(?=\s*)").Matches(reply.content))
+                foreach (Match W in new Regex("(w:|W:)(.*?<)").Matches(reply.innerHtml))
                 {
                     string address = "w:" + W.Value.Trim();
 
@@ -142,20 +149,11 @@ namespace ForumCollection
                 }
             }
 
-            if (itemInfo.ParentInfo == null)
-            {
-                AddBrowseItem(itemInfo);
-            }
-            else
-            {
-                itemInfo.ParentInfo.ChildrenInfos.Add(itemInfo);
-            }
-
             return itemInfo;
         }
 
         ///加载
-        private void Load(string url, CookieContainer cookieContainer, ItemInfo ParentInfo = null)
+        private void Load(string url, ForumClient forumClient, ItemInfo ParentInfo = null)
         {
             if (!Constant.IsForumURL(url))
             {
@@ -163,24 +161,30 @@ namespace ForumCollection
                 return;
             }
 
-            //if (ForumInfos.ForumAlreadyInfos.ContainsKey(itemInfo.TopicId))
-            //{
-            //    //禁止套娃！！！
-            //    return;
-            //}
-            //else
-            //{
-            //    ForumInfos.ForumAlreadyInfos.Add(itemInfo.TopicId, itemInfo);
-            //}
+            ItemInfo MasterItem = GetItemInfo(url, forumClient);
 
-            
+            MasterItem.ParentInfo = ParentInfo;
+
+            if (ForumInfos.ForumAlreadyInfos.Count == 0)
+            {
+                AddBrowseItem(MasterItem);
+            }
+
+
+            if (!ForumInfos.ForumAlreadyInfos.Keys.Contains(MasterItem.TopicId))
+            {
+                AddItem(MasterItem);
+                ForumInfos.ForumAlreadyInfos.Add(MasterItem.TopicId, MasterItem);
+            }
+          
+            foreach (string childrenLink in MasterItem.ChildrenLinks)
+            {
+                Load(childrenLink, forumClient, MasterItem);
+            }
+
 
         }
 
-        private void Show(ItemInfo itemInfo)
-        {
-
-        }
 
         /// <summary>
         /// 浏览
@@ -208,22 +212,20 @@ namespace ForumCollection
                     {
                         ForumClient forumClient = new ForumClient(cookieContainer);
 
-                    }
-                    else
-                    {
+                        Load(url, forumClient);
 
                     }
 
                     OnLoadCompleted();
                     ShowList();
-                }
+            }
                 catch (Exception ex)
-                {
-                    ShowList();
-                    throw ex;
-                }
+            {
+                ShowList();
+                throw ex;
+            }
 
-            })))
+        })))
             {
                 IsBackground = true
             };
@@ -261,21 +263,25 @@ namespace ForumCollection
         /// <returns></returns>
         private void AddItem(ItemInfo itemInfo)
         {
-            UserControls.Item item = new UserControls.Item(itemInfo);
-
-            item.ShowList += new UserControls.Item.ShowListHandler(ShowList);
-            item.HiddenList += new UserControls.Item.HiddenListHandler(HiddenList);
-
-            if (itemInfo.ParentInfo != null)
+            this.Dispatcher.BeginInvoke(DispatcherPriority.Normal, (ThreadStart)delegate ()
             {
-                itemInfo.ParentInfo.Item.AddItem(item);
-            }
-            else
-            {
-                ItemList.Children.Add(item);
-            }
+                UserControls.Item item = new UserControls.Item(itemInfo);
 
-            itemInfo.Item = item;
+                item.ShowList += new UserControls.Item.ShowListHandler(ShowList);
+                item.HiddenList += new UserControls.Item.HiddenListHandler(HiddenList);
+
+                if (itemInfo.ParentInfo != null)
+                {
+                    itemInfo.ParentInfo.Item.AddItem(item);
+                }
+                else
+                {
+                    ItemList.Children.Add(item);
+                }
+
+                itemInfo.Item = item;
+              });
+
         }
 
         private void ClearList()
@@ -395,17 +401,19 @@ namespace ForumCollection
         {
             this.Dispatcher.BeginInvoke(DispatcherPriority.Normal, (ThreadStart)delegate ()
             {
-                if (ForumInfos.HistoricalURL.Where(i => i.URL.Equals(info.URL)).Count() == 0)
+                if (HistoricalURL.Where(i => i.URL.Equals(info.URL)).Count() == 0)
                 {
                     UserControls.BrowseItem browseItem = new UserControls.BrowseItem(info, DropItemListWidth, DropItemListMargin);
 
                     NavigationComboBox.Items.Insert(0, browseItem);
-                    ForumInfos.HistoricalURL.Add(info);
+                    HistoricalURL.Add(info);
 
                     info.BrowseItem = browseItem;
 
                     browseItem.BrowseItemRmoveBtn.Click += new RoutedEventHandler(DelBrowseItem);
                     browseItem.BrowseItemRmoveBtn.Tag = browseItem;
+
+                    RecordHistoricalURL(info.Title, info.URL);
 
                     if (NavigationComboBox.Items.Count > 10)
                     {
@@ -424,7 +432,7 @@ namespace ForumCollection
 
             RemoveHistoricalURL(Item.Info.URL);
             NavigationComboBox.Items.Remove(Item);
-            ForumInfos.HistoricalURL.Remove(Item.Info);
+            HistoricalURL.Remove(Item.Info);
         }
 
         #endregion
@@ -697,14 +705,7 @@ namespace ForumCollection
                         string saveFileName = new Regex(Constant.FileNameSpecial).Replace(string.Format(Constant.ProjectFolderName, Item.Title.Split('»').Last()), "");
                         string saveDir = System.IO.Path.Combine(Constant.OutputDirectory, saveFileName);
 
-                        if (System.IO.Directory.Exists(saveDir) && System.IO.File.Exists(System.IO.Path.Combine(saveDir, "单据列表.xlsx")))
-                        {
-                            Process.Start(saveDir);
-                        }
-                        else
-                        {
-                            BillsList();
-                        }
+                        BillsList();
                     }
 
                     ShowList();
@@ -735,14 +736,7 @@ namespace ForumCollection
                         string saveFileName = new Regex(Constant.FileNameSpecial).Replace(string.Format(Constant.ProjectFolderName, Item.Title.Split('»').Last()), "");
                         string saveDir = System.IO.Path.Combine(Constant.OutputDirectory, saveFileName);
 
-                        if (System.IO.Directory.Exists(saveDir) && System.IO.File.Exists(System.IO.Path.Combine(saveDir, saveFileName + ".xlsx")))
-                        {
-                            Process.Start(saveDir);
-                        }
-                        else
-                        {
-                            SchedulingList();
-                        }
+                        SchedulingList();
                     }
 
                     ShowList();

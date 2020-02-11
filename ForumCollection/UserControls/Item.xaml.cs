@@ -50,6 +50,13 @@ namespace ForumCollection.UserControls
             SetDiskInfo();
             SetDataDiskInfo();
             SetFileInfo();
+            SetLinkInfo();
+
+            if (itemInfo.DiskAddressList.Count > 0)
+            {
+                SetUserNameScriptInfo(itemInfo.DiskAddressList.Last().UserName);
+            }
+            
         }
 
         public void SetDiskInfo()
@@ -83,15 +90,23 @@ namespace ForumCollection.UserControls
             }
         }
 
-        public void SetLinkInfo(string count)
+        public void SetLinkInfo()
         {
-            this.Item_Link.Text = this.Item_Link.Text.Replace(RegexHelper.RemoveNotNumber(this.Item_Link.Text), count.ToString());
+            if (Info.ChildrenLinks.Count > 0)
+            {
+                this.Item_Link.Text = this.Item_Link.Text.Replace(RegexHelper.RemoveNotNumber(this.Item_Link.Text), Info.ChildrenLinks.Count.ToString());
+            }
+       
         }
 
         public void SetUserNameScriptInfo(string name)
         {
-            this.Item_UserName_Script.Text = string.Format("脚本:\"{0}\"", name);
-            this.Item_UserName_Script.Visibility = Visibility.Visible;
+            if (!string.IsNullOrWhiteSpace(name))
+            {
+                this.Item_UserName_Script.Text = string.Format("脚本:\"{0}\"", name);
+                this.Item_UserName_Script.Visibility = Visibility.Visible;
+            }
+
         }
 
         public void SetUserNameDataInfo(string name)
