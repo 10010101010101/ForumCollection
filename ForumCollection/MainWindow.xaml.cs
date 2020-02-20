@@ -78,7 +78,7 @@ namespace ForumCollection
 
             ItemInfo itemInfo = new ItemInfo();
 
-            itemInfo.Title = items.title;
+            itemInfo.Title = new Regex(Constant.FileNameSpecial).Replace(items.title, "");
             itemInfo.URL = url;
             itemInfo.TopicId = items.topicId;
             itemInfo.ForumInfos = ForumInfos;
@@ -134,14 +134,14 @@ namespace ForumCollection
                     itemInfo.UploadFileList.Add(new UploadFileInfo { FileHref = fileInfo.downloadUrl, FileName = fileInfo.fileName, Floor = itemInfo.UploadFileList.Count, UserName = reply.userName });
                 }
 
-                foreach (Match R in new Regex("(R:|r:)(.*?<)").Matches(reply.innerHtml))
+                foreach (Match R in new Regex(@"(R:|r:)(\S+)").Matches(reply.content))
                 {
                     string address = R.Value.Trim().Replace("<","");
 
                     itemInfo.DiskAddressList.Add(new DiskAddressInfo { Address = address, Floor = itemInfo.DiskAddressList.Count, UserName = reply.userName});
                 }
 
-                foreach (Match W in new Regex("(w:|W:)(.*?<)").Matches(reply.innerHtml))
+                foreach (Match W in new Regex(@"(w:|W:)(\S+)").Matches(reply.innerHtml))
                 {
                     string address = "w:" + W.Value.Trim();
 
@@ -162,27 +162,44 @@ namespace ForumCollection
             }
 
             ItemInfo MasterItem = GetItemInfo(url, forumClient);
-
             MasterItem.ParentInfo = ParentInfo;
 
             if (ForumInfos.ForumAlreadyInfos.Count == 0)
             {
                 AddBrowseItem(MasterItem);
             }
-
-
+            
             if (!ForumInfos.ForumAlreadyInfos.Keys.Contains(MasterItem.TopicId))
             {
                 AddItem(MasterItem);
                 ForumInfos.ForumAlreadyInfos.Add(MasterItem.TopicId, MasterItem);
             }
-          
-            foreach (string childrenLink in MasterItem.ChildrenLinks)
+
+            void LoadChildren(ItemInfo itemInfo)
             {
-                Load(childrenLink, forumClient, MasterItem);
+                List<ItemInfo> ChildrenList = new List<ItemInfo>();
+
+                foreach (string childrenLink in itemInfo.ChildrenLinks)
+                {
+                    ItemInfo ChildrenItem = GetItemInfo(childrenLink, forumClient);
+                    ChildrenItem.ParentInfo = itemInfo;
+
+                    if (!ForumInfos.ForumAlreadyInfos.Keys.Contains(ChildrenItem.TopicId))
+                    {
+                        AddItem(ChildrenItem);
+                        ForumInfos.ForumAlreadyInfos.Add(ChildrenItem.TopicId, ChildrenItem);
+
+                        ChildrenList.Add(ChildrenItem);
+                    }
+                }
+
+                foreach(ItemInfo info in ChildrenList)
+                {
+                    LoadChildren(info);
+                }
             }
 
-
+            LoadChildren(MasterItem);
         }
 
 
@@ -697,8 +714,8 @@ namespace ForumCollection
 
             Thread _thread = new Thread(new ThreadStart(new Action(() =>
             {
-                try
-                {
+                //try
+                //{
                     if (ForumInfos.ForumAlreadyInfos.Count > 0)
                     {
                         ItemInfo Item = ForumInfos.ForumAlreadyInfos.Where(i => i.Value.URL.Equals(ForumInfos.MasterURL)).First().Value;
@@ -709,13 +726,13 @@ namespace ForumCollection
                     }
 
                     ShowList();
-                }
-                catch (Exception ex)
-                {
-                    ShowList();
+                //}
+                //catch (Exception ex)
+                //{
+                //    ShowList();
 
-                    MessageBox.Show(App.GetExceptionMsg(ex, string.Empty), "报错");
-                }
+                //    MessageBox.Show(App.GetExceptionMsg(ex, string.Empty), "报错");
+                //}
             })));
 
             _thread.IsBackground = true;

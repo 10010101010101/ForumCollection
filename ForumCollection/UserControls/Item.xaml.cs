@@ -517,6 +517,8 @@ namespace ForumCollection.UserControls
                 this.Btn_Tree.Visibility = Visibility.Visible;
                 this.IsTreeOpen = true;
                 this.Btn_Tree.Content = "-";
+                this.TextBlock_Count.Text = this.ItemList.Children.Count.ToString();
+                this.TextBlock_Count.Visibility = Visibility.Visible;
 
                 this.TreeHeight = this.ItemList.Height;
             }
