@@ -9,7 +9,7 @@
         <DockPanel x:Name="Frame" DockPanel.Dock="Top" Margin="5,5,5,5" MouseEnter="Frame_MouseEnter" MouseLeave="Frame_MouseLeave" Background="AliceBlue">
             <TextBlock x:Name="TextBlock_Count" Text="" DockPanel.Dock="Left" VerticalAlignment="Top" FontSize="10" Visibility="Hidden" Width="12"/>
             <Button x:Name="Btn_Tree" Width="15" Margin="0,5,0,5" DockPanel.Dock="Left" VerticalAlignment="Center" Click="Btn_Tree_Click" Visibility="Hidden"/>
-            <CheckBox x:Name="CheckBox" Margin="0,5,5,5" DockPanel.Dock="Left" VerticalAlignment="Center" IsChecked="True" Checked="CheckBox_Checked" Unchecked="CheckBox_Checked" MouseUp="CheckBox_MouseUp"/>
+            <CheckBox x:Name="CheckBox" Margin="5,5,5,5" DockPanel.Dock="Left" VerticalAlignment="Center" IsChecked="True" Checked="CheckBox_Checked" Unchecked="CheckBox_Checked" MouseUp="CheckBox_MouseUp"/>
 
             <TextBlock Margin="0,5,0,5" DockPanel.Dock="Top">
                 <Hyperlink x:Name="Hyperlink" NavigateUri="http://forum.nderp.99.com" MouseMove="Hyperlink_MouseMove"  MouseLeave="Hyperlink_MouseLeave" Click="Hyperlink_Click">

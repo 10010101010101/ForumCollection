@@ -90,6 +90,6 @@ namespace ForumCollection.Moldes
             this.ChildrenLinks = new List<string>();
         }
 
-        
+
     }
 }

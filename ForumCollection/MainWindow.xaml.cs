@@ -74,7 +74,21 @@ namespace ForumCollection
 
         private ItemInfo GetItemInfo(string url, ForumClient forumClient)
         {
+            //检查是否有存在帖子信息
+            var Infos = ForumInfos.ForumAlreadyInfos.Where(i => i.Value.URL.Equals(url));
+
+            if (Infos.Count() > 0)
+            {
+                return Infos.First().Value;
+            }
+
             var items = forumClient.GetBordInfo(url);
+
+            //根据topicid再检查一次
+            if (ForumInfos.ForumAlreadyInfos.ContainsKey(items.topicId))
+            {
+                return ForumInfos.ForumAlreadyInfos[items.topicId];
+            }
 
             ItemInfo itemInfo = new ItemInfo();
 
@@ -105,7 +119,7 @@ namespace ForumCollection
                 {
                     string link = EscapeCharacterHelper.XamlTransforEmpty(_match.Groups["url"].Value).Trim();
 
-                    if (Constant.IsForumURL(link) && !itemInfo.ChildrenLinks.Contains(link))
+                    if (Constant.IsForumURL(link))
                     {
                         if (reply.innerHtml.Contains("---"))
                         {
@@ -114,7 +128,10 @@ namespace ForumCollection
                         }
                         else
                         {
-                            itemInfo.ChildrenLinks.Add(link);
+                            if (!itemInfo.ChildrenLinks.Contains(link))
+                            {
+                                itemInfo.ChildrenLinks.Add(link);
+                            }
                         }
 
                     }
@@ -164,6 +181,7 @@ namespace ForumCollection
             ItemInfo MasterItem = GetItemInfo(url, forumClient);
             MasterItem.ParentInfo = ParentInfo;
 
+            //首个帖子加入浏览记录
             if (ForumInfos.ForumAlreadyInfos.Count == 0)
             {
                 AddBrowseItem(MasterItem);
@@ -171,9 +189,10 @@ namespace ForumCollection
             
             if (!ForumInfos.ForumAlreadyInfos.Keys.Contains(MasterItem.TopicId))
             {
-                AddItem(MasterItem);
                 ForumInfos.ForumAlreadyInfos.Add(MasterItem.TopicId, MasterItem);
             }
+
+            AddItem(MasterItem);
 
             void LoadChildren(ItemInfo itemInfo)
             {
@@ -186,11 +205,11 @@ namespace ForumCollection
 
                     if (!ForumInfos.ForumAlreadyInfos.Keys.Contains(ChildrenItem.TopicId))
                     {
-                        AddItem(ChildrenItem);
                         ForumInfos.ForumAlreadyInfos.Add(ChildrenItem.TopicId, ChildrenItem);
-
-                        ChildrenList.Add(ChildrenItem);
                     }
+
+                    AddItem(ChildrenItem);
+                    ChildrenList.Add(ChildrenItem);
                 }
 
                 foreach(ItemInfo info in ChildrenList)
@@ -900,6 +919,9 @@ namespace ForumCollection
                 }
                 catch (Exception ex)
                 {
+                    excel.Dispose();
+                    excel = null;
+
                     MessageBox.Show(ex.Message, "排期列表导出失败");
                     return;
                 }
